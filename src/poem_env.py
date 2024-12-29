@@ -13,22 +13,21 @@ class PoemGenerationEnv:
             syllables_per_verse: Number of syllables per verse.
         """
         df = df.sort_values(by=['syllables'], key= lambda col : col.str.len())
-        df = df[df['joint_syllables'] != 'not-found']
         self.vocab = df['word'].tolist()
-        self.syllable_data = self.compute_syllables()
+        self.syllable_data = self.compute_syllables(df)
         self.rhyme_data = {x: x[-rhyme_data:] for x in self.vocab}
         self.num_verses = num_verses
         self.syllables_per_verse = syllables_per_verse
 
         self.reset()
 
-    def compute_syllables(self):
+    def compute_syllables(self, df):
         d = {}
-        for index, row in self.df.iterrows():
+        for index, row in df.iterrows():
             word = row['word']
             syl = eval(row['syllables'])
             d[word] = len(syl)
-
+        return d
 
     def reset(self):
         """
@@ -88,7 +87,7 @@ class PoemGenerationEnv:
             if len(self.current_poem) > 1:
                 previous_rhyme = self.rhyme_data[self.current_poem[-2].split()[-1]]
                 if rhyme_ending == previous_rhyme:
-                    reward += 10  # Bonus for rhyming
+                    reward += 15  # Bonus for rhyming
 
             # Move to the next verse
             self.current_verse = []
@@ -104,9 +103,7 @@ class PoemGenerationEnv:
             # Penalty for exceeding syllable count
             reward -= 15
             self.done = True  # End the episode early
-        else:
-            # Small reward for valid progress
-            reward += 1
+        
 
         return self.get_state(), reward, self.done
 
